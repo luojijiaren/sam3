@@ -64,8 +64,7 @@ notebooks = [
     "einops",
     "scikit-image",
     "scikit-learn",
-    "jedi>=0.16",
-    "ipython",
+    "jedi",
 ]
 train = [
     "hydra-core",
