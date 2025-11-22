@@ -26,7 +26,7 @@ classifiers = [
 ]
 dependencies = [
     "timm>=1.0.17",
-    "numpy>=2.0,<2.3",
+    "numpy>=2.0,<2.1",
     "tqdm",
     "ftfy==6.1.1",
     "regex",
@@ -64,6 +64,8 @@ notebooks = [
     "einops",
     "scikit-image",
     "scikit-learn",
+    "jedi>=0.16",
+    "ipython",
 ]
 train = [
     "hydra-core",
