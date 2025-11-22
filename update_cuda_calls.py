@@ -96,7 +96,7 @@ def update_file(filepath: str):
         print(f"  - No changes needed")
 
 def main():
-    os.chdir("/Users/lynnezhang/Documents/sam3")
+    os.chdir()
     
     for filepath in FILES_TO_UPDATE:
         update_file(filepath)
