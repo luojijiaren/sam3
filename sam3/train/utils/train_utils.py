@@ -1,5 +1,3 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates. All Rights Reserved
-
 import logging
 import math
 import os
@@ -7,15 +5,18 @@ import random
 import re
 from datetime import timedelta
 from typing import Optional
-
 import hydra
-
 import numpy as np
 import omegaconf
 import torch
 import torch.distributed as dist
+from sam3.utils.device_utils import get_device
 from iopath.common.file_io import g_pathmgr
 from omegaconf import OmegaConf
+# Copyright (c) Meta Platforms, Inc. and affiliates. All Rights Reserved
+
+
+
 
 
 def multiply_all(*args):

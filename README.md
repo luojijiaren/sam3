@@ -61,7 +61,7 @@ This breakthrough is driven by an innovative data engine that has automatically 
 
 - Python 3.12 or higher
 - PyTorch 2.7 or higher
-- CUDA-compatible GPU with CUDA 12.6 or higher
+- CUDA-compatible GPU with CUDA 12.6 or higher OR Apple Silicon Mac (M1/M2/M3/M4)
 
 1. **Create a new Conda environment:**
 
@@ -71,10 +71,16 @@ conda deactivate
 conda activate sam3
 ```
 
-2. **Install PyTorch with CUDA support:**
+2. **Install PyTorch:**
 
+For CUDA support (Linux/Windows):
 ```bash
 pip install torch==2.7.0 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+```
+
+For MPS support (macOS):
+```bash
+pip install torch torchvision torchaudio
 ```
 
 3. **Clone the repository and install the package:**

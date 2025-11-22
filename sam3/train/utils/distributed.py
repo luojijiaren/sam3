@@ -1,11 +1,3 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates. All Rights Reserved
-
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-# All rights reserved.
-
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
-
 import datetime
 import functools
 import io
@@ -15,10 +7,19 @@ import random
 import tempfile
 import time
 from typing import Any, Callable, List, Tuple
-
 import torch
 import torch.autograd as autograd
 import torch.distributed as dist
+from sam3.utils.device_utils import get_device
+# Copyright (c) Meta Platforms, Inc. and affiliates. All Rights Reserved
+
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+
+
 
 
 # Default to GPU 0
@@ -197,7 +198,7 @@ def convert_to_distributed_tensor(tensor: torch.Tensor) -> Tuple[torch.Tensor, s
         and torch.distributed.get_backend() == torch.distributed.Backend.NCCL
         and not tensor.is_cuda
     ):
-        tensor = tensor.cuda()
+        tensor = tensor.to(get_device())
     return (tensor, orig_device)
 
 

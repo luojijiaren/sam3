@@ -40,16 +40,20 @@ from sam3.model.tokenizer_ve import SimpleTokenizer
 from sam3.model.vitdet import ViT
 from sam3.model.vl_combiner import SAM3VLBackbone
 from sam3.sam.transformer import RoPEAttention
+from sam3.utils.device_utils import get_device
 
 
 # Setup TensorFloat-32 for Ampere GPUs if available
 def _setup_tf32() -> None:
-    """Enable TensorFloat-32 for Ampere GPUs if available."""
+    """Enable TensorFloat-32 for Ampere GPUs if available (CUDA only)."""
     if torch.cuda.is_available():
-        device_props = torch.cuda.get_device_properties(0)
-        if device_props.major >= 8:
-            torch.backends.cuda.matmul.allow_tf32 = True
-            torch.backends.cudnn.allow_tf32 = True
+        try:
+            device_props = torch.cuda.get_device_properties(0)
+            if device_props.major >= 8:
+                torch.backends.cuda.matmul.allow_tf32 = True
+                torch.backends.cudnn.allow_tf32 = True
+        except Exception:
+            pass  # Silently ignore if CUDA setup fails
 
 
 _setup_tf32()
@@ -547,8 +551,8 @@ def _load_checkpoint(model, checkpoint_path):
 
 def _setup_device_and_mode(model, device, eval_mode):
     """Setup model device and evaluation mode."""
-    if device == "cuda":
-        model = model.cuda()
+    # Move model to the specified device
+    model = model.to(device)
     if eval_mode:
         model.eval()
     return model
@@ -556,7 +560,7 @@ def _setup_device_and_mode(model, device, eval_mode):
 
 def build_sam3_image_model(
     bpe_path=None,
-    device="cuda" if torch.cuda.is_available() else "cpu",
+    device=None,
     eval_mode=True,
     checkpoint_path=None,
     load_from_HF=True,
@@ -569,7 +573,7 @@ def build_sam3_image_model(
 
     Args:
         bpe_path: Path to the BPE tokenizer vocabulary
-        device: Device to load the model on ('cuda' or 'cpu')
+        device: Device to load the model on. If None, automatically selects best available (mps/cuda/cpu)
         eval_mode: Whether to set the model to evaluation mode
         checkpoint_path: Optional path to model checkpoint
         enable_segmentation: Whether to enable segmentation head
@@ -632,6 +636,8 @@ def build_sam3_image_model(
         _load_checkpoint(model, checkpoint_path)
 
     # Setup device and mode
+    if device is None:
+        device = get_device()
     model = _setup_device_and_mode(model, device, eval_mode)
 
     return model
@@ -654,7 +660,7 @@ def build_sam3_video_model(
     geo_encoder_use_img_cross_attn: bool = True,
     strict_state_dict_loading: bool = True,
     apply_temporal_disambiguation: bool = True,
-    device="cuda" if torch.cuda.is_available() else "cpu",
+    device=None,
     compile=False,
 ) -> Sam3VideoInferenceWithInstanceInteractivity:
     """
@@ -783,6 +789,8 @@ def build_sam3_video_model(
         if unexpected_keys:
             print(f"Unexpected keys: {unexpected_keys}")
 
+    if device is None:
+        device = get_device()
     model.to(device=device)
     return model
 

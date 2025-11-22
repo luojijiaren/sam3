@@ -1,5 +1,3 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates. All Rights Reserved
-
 import contextlib
 import fnmatch
 import gc
@@ -11,22 +9,25 @@ import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional
-
 import numpy as np
-
 import torch
 import torch.distributed as dist
 import torch.nn as nn
+from sam3.utils.device_utils import get_device
 from hydra.utils import instantiate
 from iopath.common.file_io import g_pathmgr
-
 from sam3.model.data_misc import BatchedDatapoint
 from sam3.model.model_misc import SAM3Output
 from sam3.model.utils.misc import copy_data_to_device
-
 from sam3.train.optim.optimizer import construct_optimizer
-
 from sam3.train.utils.checkpoint_utils import (
+# Copyright (c) Meta Platforms, Inc. and affiliates. All Rights Reserved
+
+
+
+
+
+
     assert_skipped_parameters_are_frozen,
     exclude_params_matching_unix_pattern,
     load_state_dict_into_model,
@@ -609,7 +610,7 @@ class Trainer:
                 if torch.cuda.is_available() and self.empty_gpu_mem_cache_after_eval:
                     # release memory buffers held by the model during eval (which typically
                     # involves a lot more frames in video grounding that during training)
-                    torch.cuda.empty_cache()
+                    get_device(); empty_cache()
 
             if self.distributed_rank == 0:
                 self.best_meter_values.update(self._get_trainer_state("train"))

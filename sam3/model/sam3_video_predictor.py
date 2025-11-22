@@ -16,6 +16,7 @@ import psutil
 import torch
 
 from sam3.logger import get_logger
+from sam3.utils.device_utils import get_device_memory_info, get_device_name, get_device
 
 logger = get_logger(__name__)
 
@@ -48,7 +49,6 @@ class Sam3VideoPredictor:
                 strict_state_dict_loading=strict_state_dict_loading,
                 apply_temporal_disambiguation=apply_temporal_disambiguation,
             )
-            .cuda()
             .eval()
         )
 
@@ -265,21 +265,23 @@ class Sam3VideoPredictor:
             f"'{session_id}' ({session['state']['num_frames']} frames)"
             for session_id, session in self._ALL_INFERENCE_STATES.items()
         ]
+        
+        # Get device-agnostic memory info
+        mem_info = get_device_memory_info()
         session_stats_str = (
             f"live sessions: [{', '.join(live_session_strs)}], GPU memory: "
-            f"{torch.cuda.memory_allocated() // 1024**2} MiB used and "
-            f"{torch.cuda.memory_reserved() // 1024**2} MiB reserved"
-            f" (max over time: {torch.cuda.max_memory_allocated() // 1024**2} MiB used "
-            f"and {torch.cuda.max_memory_reserved() // 1024**2} MiB reserved)"
+            f"{mem_info['allocated']:.0f} MiB used and "
+            f"{mem_info['reserved']:.0f} MiB reserved"
+            f" (max over time: {mem_info['max_allocated']:.0f} MiB used "
+            f"and {mem_info['max_reserved']:.0f} MiB reserved)"
         )
         return session_stats_str
 
     def _get_torch_and_gpu_properties(self):
         """Get a string for PyTorch and GPU properties (for logging and debugging)."""
-        torch_and_gpu_str = (
-            f"torch: {torch.__version__} with CUDA arch {torch.cuda.get_arch_list()}, "
-            f"GPU device: {torch.cuda.get_device_properties(torch.cuda.current_device())}"
-        )
+        device = get_device()
+        device_name = get_device_name(device)
+        torch_and_gpu_str = f"torch: {torch.__version__}, device: {device_name}"
         return torch_and_gpu_str
 
     def shutdown(self):
@@ -289,6 +291,18 @@ class Sam3VideoPredictor:
 
 class Sam3VideoPredictorMultiGPU(Sam3VideoPredictor):
     def __init__(self, *model_args, gpus_to_use=None, **model_kwargs):
+        # Check if CUDA is available for multi-GPU setup
+        if not torch.cuda.is_available():
+            # Fall back to single device (MPS or CPU)
+            logger.warning("Multi-GPU requires CUDA. Falling back to single device mode.")
+            super().__init__(*model_args, **model_kwargs)
+            self.device = get_device()
+            self.rank = 0
+            self.world_size = 1
+            self.rank_str = "rank=0 with world_size=1"
+            self.has_shutdown = False
+            return
+        
         if gpus_to_use is None:
             # if not specified, use only the current GPU by default
             gpus_to_use = [torch.cuda.current_device()]
@@ -428,7 +442,7 @@ class Sam3VideoPredictorMultiGPU(Sam3VideoPredictor):
             device_id=self.device,
         )
         # warm-up the NCCL process group by running a dummy all-reduce
-        tensor = torch.ones(1024, 1024).cuda()
+        tensor = torch.ones(1024, 1024).to(self.device)
         torch.distributed.all_reduce(tensor)
         logger.debug(f"started NCCL process group on {rank=} with {world_size=}")
 

@@ -1,10 +1,11 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates. All Rights Reserved
-
 import logging
 from contextlib import contextmanager
 from functools import wraps
-
 import torch
+from sam3.utils.device_utils import get_device
+# Copyright (c) Meta Platforms, Inc. and affiliates. All Rights Reserved
+
+
 
 __all__ = ["retry_if_cuda_oom"]
 
@@ -28,7 +29,7 @@ def retry_if_cuda_oom(func):
     """
     Makes a function retry itself after encountering
     pytorch's CUDA OOM error.
-    It will first retry after calling `torch.cuda.empty_cache()`.
+    It will first retry after calling `get_device(); empty_cache()`.
 
     If that still fails, it will then retry by trying to convert inputs to CPUs.
     In this case, it expects the function to dispatch to CPU implementation.
@@ -71,7 +72,7 @@ def retry_if_cuda_oom(func):
             return func(*args, **kwargs)
 
         # Clear cache and retry
-        torch.cuda.empty_cache()
+        get_device(); empty_cache()
         with _ignore_torch_cuda_oom():
             return func(*args, **kwargs)
 

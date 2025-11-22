@@ -1,16 +1,17 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates. All Rights Reserved
-
 import math
 from functools import partial
 from typing import Tuple, Type
-
 import torch
 import torch.nn.functional as F
-
+from sam3.utils.device_utils import get_device
 from sam3.sam.rope import apply_rotary_enc, apply_rotary_enc_real, compute_axial_cis
 from torch import nn, Tensor
-
 from .common import MLPBlock
+# Copyright (c) Meta Platforms, Inc. and affiliates. All Rights Reserved
+
+
+
+
 
 
 class TwoWayTransformer(nn.Module):
